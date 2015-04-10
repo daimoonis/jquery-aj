@@ -1,0 +1,75 @@
+(function ($) {
+	$.aj = function (oML) {
+		var oM = $.extend({}, $.aj.oM, oML);
+
+		var $oThrobber = $('<span class="aj-loading"> <i class="fa fa-spinner fa-pulse"></i>' + oM.hlaska + '</span>');
+		var $oDiv = $('<div>' + oM.hlaska + '</div>');
+
+		var sParametry = oM.paramS;
+		$.each(oM.paramO, function (parametr, hodnota) {
+			sParametry += (sParametry ? '&' : '') + parametr + '=' + (typeof hodnota == "function" ? hodnota() : hodnota);
+		});
+
+		var $ajax = $.ajax({
+			type: oM.metoda,
+			url: oM.url,
+			data: sParametry,
+			async: oM.async,
+			dataType: oM.dataType,
+			beforeSend: function (XMLHttpRequest) {
+				if (oM.after !== null) {
+					if (oM.after instanceof $) {
+						oM.after.after($oThrobber);
+					}
+					else {
+						$(oM.after).after($oThrobber);
+					}
+				}
+				else if (oM.hlaska !== '') {
+					$oDiv.dialog({
+						height: 70,
+						modal: true,
+						resizable: false,
+						beforeClose: function (event, ui) {
+							if ($ajax)
+								$ajax.abort();
+						}
+					});
+				}
+			},
+			success: function (sV, sT) {
+				if (typeof oM.funkce == 'function') {
+					oM.funkce(sV);
+				}
+			},
+			error: function (oR, sT, oE) {
+				if (oR.status) {
+					console.log(oR.status + ': ' + oR.statusText);
+				}
+			},
+			complete: function () {
+				if (oM.after !== null) {
+					$oThrobber.remove();
+				}
+				else if (oM.hlaska !== '') {
+					$oDiv.dialog('destroy');
+					$oDiv.remove();
+				}
+			},
+			cache: false,
+			global: false
+		});
+	};
+
+	$.aj.oM = {
+		url: '',
+		paramO: {},
+		after: null,
+		paramS: '',
+		funkce: false,
+		hlaska: '',
+		metoda: 'get',
+		async: true,
+		dataType: 'html'
+	};
+})(jQuery);
